@@ -16,6 +16,15 @@ sudo dnf install -y \
     gcc \
     gcc-c++
 
+echo "==> Installing Ghostty"
+
+if ! command -v ghostty >/dev/null 2>&1; then
+    sudo dnf install -y ghostty || {
+        sudo dnf copr enable -y scottames/ghostty
+        sudo dnf install -y ghostty
+    }
+fi
+
 echo "==> Creating directories"
 
 mkdir -p ~/.config

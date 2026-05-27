@@ -1,7 +1,3 @@
--- ╔════════════════════════════════════════╗
--- ║     honeynil — plugins/telescope       ║
--- ╚════════════════════════════════════════╝
-
 return {
   {
     "nvim-telescope/telescope.nvim",
@@ -27,10 +23,10 @@ return {
 
       return {
         defaults = {
-          prompt_prefix   = "   ",
-          selection_caret = "❯ ",
+          prompt_prefix   = "> ",
+          selection_caret = "> ",
           entry_prefix    = "  ",
-          multi_icon      = "󰄵 ",
+          multi_icon      = "+ ",
           path_display    = { "truncate" },
           sorting_strategy = "ascending",
           layout_strategy = "horizontal",
@@ -51,9 +47,9 @@ return {
           },
           border      = true,
           borderchars = {
-            prompt  = { "─", "│", " ", "│", "╭", "╮", "│", "│" },
-            results = { "─", "│", "─", "│", "├", "┤", "╯", "╰" },
-            preview = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
+            prompt  = { "-", "|", " ", "|", "+", "+", "|", "|" },
+            results = { "-", "|", "-", "|", "+", "+", "+", "+" },
+            preview = { "-", "|", "-", "|", "+", "+", "+", "+" },
           },
           mappings = {
             i = {

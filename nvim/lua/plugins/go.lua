@@ -1,7 +1,3 @@
--- ╔═══════════════════════════════════════╗
--- ║       honeynil — plugins/go           ║
--- ╚═══════════════════════════════════════╝
-
 return {
   {
     "ray-x/go.nvim",
@@ -29,7 +25,7 @@ return {
         test_runner         = "go",
         run_in_floaterm     = true,
         floaterm            = {
-          posititon = "auto",
+          position  = "auto",
           width     = 0.45,
           height    = 0.98,
           title_colors = "nord",
@@ -120,20 +116,20 @@ return {
       })
 
       dapui.setup({
-        icons   = { expanded = "▾", collapsed = "▸", current_frame = "▸" },
+        icons   = { expanded = "v", collapsed = ">", current_frame = ">" },
         controls = {
           enabled    = true,
           element    = "repl",
           icons = {
-            pause         = "",
-            play          = "",
-            step_into     = "",
-            step_over     = "",
-            step_out      = "",
-            step_back     = "",
-            run_last      = "",
-            terminate     = "",
-            disconnect    = "",
+            pause         = "pause",
+            play          = "run",
+            step_into     = "in",
+            step_over     = "over",
+            step_out      = "out",
+            step_back     = "back",
+            run_last      = "last",
+            terminate     = "stop",
+            disconnect    = "disc",
           },
         },
         floating = { border = "rounded", mappings = { close = { "q", "<Esc>" } } },
@@ -177,10 +173,10 @@ return {
         quickfix    = { open = function() vim.cmd("Trouble qflist open") end },
         status      = { virtual_text = true },
         icons = {
-          passed  = " ",
-          running = " ",
-          failed  = " ",
-          unknown = " ",
+          passed  = "OK",
+          running = "..",
+          failed  = "!!",
+          unknown = "??",
         },
       }
     end,

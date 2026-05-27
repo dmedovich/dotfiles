@@ -12,7 +12,7 @@ Personal development environment.
 ## Included
 
 - Mononoki Nerd Font
-- Ghostty config
+- Ghostty terminal and config
 - Neovim config
 - VSCodium settings
 - Zsh setup
@@ -28,4 +28,3 @@ chmod +x scripts/install.sh
 
 ./scripts/install.sh
 ```
-

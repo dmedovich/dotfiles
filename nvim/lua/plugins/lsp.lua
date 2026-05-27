@@ -1,7 +1,3 @@
--- ╔══════════════════════════════════════╗
--- ║       honeynil — plugins/lsp         ║
--- ╚══════════════════════════════════════╝
-
 return {
   {
     "mason-org/mason.nvim",
@@ -9,9 +5,9 @@ return {
       ui = {
         border = "rounded",
         icons  = {
-          package_installed   = "✓",
-          package_pending     = "➜",
-          package_uninstalled = "✗",
+          package_installed   = "OK",
+          package_pending     = "->",
+          package_uninstalled = "X",
         },
       },
       ensure_installed = {
@@ -42,10 +38,10 @@ return {
       diagnostics = {
         signs = {
           text = {
-            [vim.diagnostic.severity.ERROR] = " ",
-            [vim.diagnostic.severity.WARN]  = " ",
-            [vim.diagnostic.severity.HINT]  = "󰠠 ",
-            [vim.diagnostic.severity.INFO]  = " ",
+            [vim.diagnostic.severity.ERROR] = "E",
+            [vim.diagnostic.severity.WARN]  = "W",
+            [vim.diagnostic.severity.HINT]  = "H",
+            [vim.diagnostic.severity.INFO]  = "I",
           },
         },
         underline       = true,
@@ -53,7 +49,7 @@ return {
         virtual_text    = {
           spacing = 4,
           source  = "if_many",
-          prefix  = "●",
+          prefix  = "*",
         },
         severity_sort   = true,
         float = {

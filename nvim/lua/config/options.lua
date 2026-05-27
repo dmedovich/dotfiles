@@ -1,6 +1,3 @@
--- ╔═══════════════════════════════════╗
--- ║     honeynil — config/options     ║
--- ╚═══════════════════════════════════╝
 local opt = vim.opt
 
 opt.termguicolors  = true
@@ -48,7 +45,7 @@ opt.mouse       = "a"
 opt.clipboard   = "unnamedplus"
 opt.laststatus  = 3
 opt.list        = true
-opt.listchars   = { tab = "→ ", trail = "·", nbsp = "␣" }
+opt.listchars   = { tab = "> ", trail = ".", nbsp = "_" }
 
 vim.g.mapleader       = " "
 vim.g.maplocalleader  = "\\"

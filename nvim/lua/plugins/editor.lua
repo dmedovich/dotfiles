@@ -1,7 +1,3 @@
--- ╔══════════════════════════════════════╗
--- ║     honeynil — plugins/editor        ║
--- ╚══════════════════════════════════════╝
-
 return {
   {
     "nvim-treesitter/nvim-treesitter",
@@ -86,11 +82,11 @@ return {
       icons = { mappings = true },
       spec  = {
         { "<leader>g",  group = " Go / Git" },
-        { "<leader>l",  group = "󰒕 LSP" },
+        { "<leader>l",  group = "LSP" },
         { "<leader>f",  group = " Find" },
         { "<leader>h",  group = " Git hunks" },
         { "<leader>d",  group = " Debug" },
-        { "<leader>t",  group = "󰙨 Test" },
+        { "<leader>t",  group = "Test" },
         { "<leader>b",  group = " Buffer" },
       },
     },
@@ -101,7 +97,7 @@ return {
     event = { "BufReadPost", "BufNewFile" },
     main  = "ibl",
     opts  = {
-      indent  = { char = "│", tab_char = "│" },
+      indent  = { char = "|", tab_char = "|" },
       scope   = { enabled = true, show_start = true, show_end = false },
       exclude = {
         filetypes = {
@@ -182,13 +178,13 @@ return {
       signs      = true,
       sign_priority = 8,
       keywords = {
-        FIX    = { icon = " ", color = "error",   alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
-        TODO   = { icon = " ", color = "info" },
-        HACK   = { icon = " ", color = "warning" },
-        WARN   = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
-        PERF   = { icon = "󰾆 ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-        NOTE   = { icon = "󰋽 ", color = "hint",    alt = { "INFO" } },
-        TEST   = { icon = "⏲ ", color = "test",    alt = { "TESTING", "PASSED", "FAILED" } },
+        FIX    = { icon = "FIX ", color = "error",   alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
+        TODO   = { icon = "TODO ", color = "info" },
+        HACK   = { icon = "HACK ", color = "warning" },
+        WARN   = { icon = "WARN ", color = "warning", alt = { "WARNING", "XXX" } },
+        PERF   = { icon = "PERF ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
+        NOTE   = { icon = "NOTE ", color = "hint",    alt = { "INFO" } },
+        TEST   = { icon = "TEST ", color = "test",    alt = { "TESTING", "PASSED", "FAILED" } },
       },
       highlight = {
         multiline          = true,

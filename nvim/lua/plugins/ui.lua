@@ -1,7 +1,3 @@
--- ╔═══════════════════════════════════════╗
--- ║       honeynil — plugins/ui           ║
--- ╚═══════════════════════════════════════╝
-
 local M = {}
 
 M[1] = {
@@ -21,38 +17,25 @@ M[2] = {
     dashboard = {
       preset = {
         header = table.concat({
-          "                                                     ",
-          "  ██╗  ██╗ ██████╗ ███╗   ██╗███████╗██╗   ██╗     ",
-          "  ██║  ██║██╔═══██╗████╗  ██║██╔════╝╚██╗ ██╔╝     ",
-          "  ███████║██║   ██║██╔██╗ ██║█████╗   ╚████╔╝      ",
-          "  ██╔══██║██║   ██║██║╚██╗██║██╔══╝    ╚██╔╝       ",
-          "  ██║  ██║╚██████╔╝██║ ╚████║███████╗   ██║        ",
-          "  ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝   ╚═╝        ",
-          "               ██╗   ██╗██╗███╗   ███╗             ",
-          "               ██║   ██║██║████╗ ████║             ",
-          "               ██║   ██║██║██╔████╔██║             ",
-          "               ╚██╗ ██╔╝██║██║╚██╔╝██║             ",
-          "                ╚████╔╝ ██║██║     ██║              ",
-          "                 ╚██╔╝  ╚═╝╚═╝     ╚═╝              ",
-          "                                                     ",
+          "  honeynil nvim  ",
         }, "\n"),
         keys = {
-          { icon = "󰱼 ", key = "f", desc = "Find File",      action = "<cmd>Telescope find_files<cr>" },
-          { icon = "󰺮 ", key = "g", desc = "Live Grep",      action = "<cmd>Telescope live_grep<cr>" },
-          { icon = " ", key = "r", desc = "Recent Files",   action = "<cmd>Telescope oldfiles<cr>" },
-          { icon = " ", key = "n", desc = "New File",       action = "<cmd>ene | startinsert<cr>" },
-          { icon = "󰙅 ", key = "e", desc = "Explorer",       action = "<cmd>Neotree reveal toggle left<cr>" },
-          { icon = " ", key = "G", desc = "LazyGit",        action = "<cmd>LazyGit<cr>" },
-          { icon = "󰒲 ", key = "L", desc = "Lazy",            action = "<cmd>Lazy<cr>" },
-          { icon = "󰥔 ", key = "M", desc = "Mason",           action = "<cmd>Mason<cr>" },
-          { icon = " ", key = "q", desc = "Quit",           action = "<cmd>qa<cr>" },
+          { icon = "F ", key = "f", desc = "Find File",      action = "<cmd>Telescope find_files<cr>" },
+          { icon = "G ", key = "g", desc = "Live Grep",      action = "<cmd>Telescope live_grep<cr>" },
+          { icon = "R ", key = "r", desc = "Recent Files",   action = "<cmd>Telescope oldfiles<cr>" },
+          { icon = "N ", key = "n", desc = "New File",       action = "<cmd>ene | startinsert<cr>" },
+          { icon = "E ", key = "e", desc = "Explorer",       action = "<cmd>Neotree reveal toggle left<cr>" },
+          { icon = "G ", key = "G", desc = "LazyGit",        action = "<cmd>LazyGit<cr>" },
+          { icon = "L ", key = "L", desc = "Lazy",            action = "<cmd>Lazy<cr>" },
+          { icon = "M ", key = "M", desc = "Mason",           action = "<cmd>Mason<cr>" },
+          { icon = "Q ", key = "q", desc = "Quit",           action = "<cmd>qa<cr>" },
         },
       },
       sections = {
         { section = "header" },
         { section = "keys",   gap = 1, padding = 1 },
         { section = "terminal", cmd = "go version 2>/dev/null | awk '{print \"  \" $3}' || echo ''", height = 1, padding = 1 },
-        { icon = "󰄉 ", title = " Workspace", section = "terminal", cmd = "pwd | sed 's|^" .. vim.fn.expand("~") .. "|~|'", height = 1, padding = 0 },
+        { icon = "W ", title = " Workspace", section = "terminal", cmd = "pwd | sed 's|^" .. vim.fn.expand("~") .. "|~|'", height = 1, padding = 0 },
         { section = "startup" },
       },
     },
@@ -93,7 +76,7 @@ M[3] = {
         lualine_a = { "mode" },
         lualine_b = { "branch", "diff", "diagnostics" },
         lualine_c = {
-          { "filename", path = 1, symbols = { modified = " ●", readonly = " ", unnamed = " [No Name]" } },
+          { "filename", path = 1, symbols = { modified = " *", readonly = " RO", unnamed = " [No Name]" } },
         },
         lualine_x = {
           {
@@ -127,7 +110,7 @@ M[4] = {
       color_icons             = true,
       diagnostics             = "nvim_lsp",
       diagnostics_indicator   = function(count, level)
-        local icon = level:match("error") and " " or " "
+        local icon = level:match("error") and "E" or "W"
         return " " .. icon .. count
       end,
       offsets = {

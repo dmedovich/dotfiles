@@ -1,19 +1,15 @@
--- ╔══════════════════════════════════════╗
--- ║       honeynil — plugins/git         ║
--- ╚══════════════════════════════════════╝
-
 return {
   {
     "lewis6991/gitsigns.nvim",
     event = { "BufReadPre", "BufNewFile" },
     opts = {
       signs = {
-        add          = { text = "▎" },
-        change       = { text = "▎" },
-        delete       = { text = "" },
-        topdelete    = { text = "" },
-        changedelete = { text = "▎" },
-        untracked    = { text = "▎" },
+        add          = { text = "+" },
+        change       = { text = "~" },
+        delete       = { text = "-" },
+        topdelete    = { text = "-" },
+        changedelete = { text = "~" },
+        untracked    = { text = "?" },
       },
       signcolumn         = true,
       numhl              = false,
@@ -28,7 +24,7 @@ return {
         delay             = 800,
         ignore_whitespace = false,
       },
-      current_line_blame_formatter = " 󰶻 <author>, <author_time:%Y-%m-%d> · <summary>",
+      current_line_blame_formatter = " <author>, <author_time:%Y-%m-%d>: <summary>",
       sign_priority = 6,
       update_debounce = 100,
       status_formatter = nil,
@@ -97,7 +93,7 @@ return {
     config = function()
       vim.g.lazygit_floating_window_winblend  = 0
       vim.g.lazygit_floating_window_scaling_factor = 0.9
-      vim.g.lazygit_floating_window_border_chars = { "╭","─","╮","│","╯","─","╰","│" }
+      vim.g.lazygit_floating_window_border_chars = { "+","-","+","|","+","-","+","|" }
       vim.g.lazygit_use_neovim_remote          = 1
     end,
   },

@@ -1,6 +1,3 @@
--- ╔══════════════════════════════════╗
--- ║     honeynil — config/lazy       ║
--- ╚══════════════════════════════════╝
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local out = vim.fn.system({
@@ -42,7 +39,7 @@ require("lazy").setup({
   },
   ui = {
     border = "rounded",
-    title  = "  honeynil — plugins ",
+    title  = "  honeynil plugins ",
     title_pos = "center",
   },
 })

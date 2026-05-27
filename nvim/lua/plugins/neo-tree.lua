@@ -1,7 +1,3 @@
--- ╔═══════════════════════════════════════╗
--- ║     honeynil — plugins/neo-tree       ║
--- ╚═══════════════════════════════════════╝
-
 return {
   {
     "nvim-neo-tree/neo-tree.nvim",
@@ -27,8 +23,8 @@ return {
         content_layout = "center",
         separator      = { left = "", right = "" },
         sources = {
-          { source = "filesystem",  display_name = " 󰉓 Files " },
-          { source = "buffers",     display_name = " 󰈙 Bufs "  },
+          { source = "filesystem",  display_name = " Files " },
+          { source = "buffers",     display_name = " Bufs "  },
           { source = "git_status",  display_name = "  Git "   },
         },
       },
@@ -38,19 +34,19 @@ return {
           indent_size         = 2,
           padding             = 1,
           with_markers        = true,
-          indent_marker       = "│",
-          last_indent_marker  = "└",
+          indent_marker       = "|",
+          last_indent_marker  = "`",
           highlight           = "NeoTreeIndentMarker",
           with_expanders      = true,
-          expander_collapsed  = "",
-          expander_expanded   = "",
+          expander_collapsed  = ">",
+          expander_expanded   = "v",
           expander_highlight  = "NeoTreeExpander",
         },
         icon = {
-          folder_closed = "",
-          folder_open   = "",
-          folder_empty  = "󰜌",
-          default       = "󰈚",
+          folder_closed = "[d]",
+          folder_open   = "[D]",
+          folder_empty  = "[e]",
+          default       = "[f]",
           highlight     = "NeoTreeFileIcon",
         },
         modified = { symbol = "[+]", highlight = "NeoTreeModified" },
@@ -61,23 +57,23 @@ return {
         },
         git_status = {
           symbols = {
-            added     = "✚",
-            modified  = "",
-            deleted   = "✖",
-            renamed   = "󰁕",
-            untracked = "",
-            ignored   = "",
-            unstaged  = "󰄱",
-            staged    = "",
-            conflict  = "",
+            added     = "+",
+            modified  = "~",
+            deleted   = "-",
+            renamed   = "R",
+            untracked = "?",
+            ignored   = "I",
+            unstaged  = "U",
+            staged    = "S",
+            conflict  = "C",
           },
         },
         diagnostics = {
           symbols = {
-            hint  = "󰠠 ",
-            info  = " ",
-            warn  = " ",
-            error = " ",
+            hint  = "H",
+            info  = "I",
+            warn  = "W",
+            error = "E",
           },
           highlights = {
             hint  = "DiagnosticSignHint",
@@ -149,7 +145,7 @@ return {
             ["gc"] = "git_commit",
             ["gp"] = "git_push",
             ["gg"] = "git_commit_and_push",
-            ["o"]  = { "show_help", nowait=false, config = { title = "Order by", prefix_key = "o" }},
+            ["o"]  = { "show_help", nowait = false, config = { title = "Order by", prefix_key = "o" }},
           },
         },
       },
