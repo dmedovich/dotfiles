@@ -1,7 +1,13 @@
 font-family = Mononoki Nerd Font
 font-size = 13
 
-theme = Monokai Classic
+theme = Brogrammer
+#0x96f
+#Oxocarbon
+#Ghostty Default Style Dark 
+#Kanagawa Wave 
+#Brogrammer 
+#Monokai Pro Machine
 
 cursor-style = block
 shell-integration = zsh
