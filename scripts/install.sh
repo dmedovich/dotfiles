@@ -16,6 +16,7 @@ echo "==> Installing Fedora packages"
 sudo dnf install -y \
     zsh \
     neovim \
+    dnf-plugins-core \
     git \
     curl \
     ca-certificates \
@@ -25,6 +26,7 @@ sudo dnf install -y \
     fzf \
     fd-find \
     ripgrep \
+    tree-sitter-cli \
     make \
     gcc \
     gcc-c++
@@ -115,9 +117,25 @@ export PATH="/usr/local/go/bin:$HOME/.local/bin:$PATH"
 export GOBIN="$HOME/.local/bin"
 
 go install golang.org/x/tools/gopls@latest
+go install mvdan.cc/gofumpt@latest
 go install github.com/go-delve/delve/cmd/dlv@latest
 go install github.com/air-verse/air@latest
 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+echo "==> Installing Neovim plugins and tools"
+
+nvim --headless \
+    '+lua print("Neovim plugins installed")' \
+    +qa
+
+nvim --headless \
+    '+lua require("nvim-treesitter").install({ "go", "gomod", "gosum", "gowork", "lua", "luadoc", "query", "vim", "vimdoc", "zig" }):wait(300000); print("Treesitter parsers installed")' \
+    +qa
+
+nvim --headless \
+    '+MasonInstall lua-language-server gopls zls' \
+    '+sleep 30000m' \
+    +qa
 
 echo "==> Done"
 echo "Restart your shell or run: source ~/.zshrc"
