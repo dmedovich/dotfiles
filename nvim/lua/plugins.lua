@@ -243,7 +243,7 @@ setup("blink.cmp", function(blink)
       implementation = "prefer_rust_with_warning",
     },
     keymap = {
-      preset = "default",
+      preset = "enter",
     },
     sources = {
       default = { "lsp", "path", "snippets", "buffer" },
