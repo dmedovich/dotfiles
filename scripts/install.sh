@@ -112,7 +112,7 @@ install -m 0644 "$REPO_ROOT/zsh/.zshrc" "$HOME/.zshrc"
 install -m 0644 "$REPO_ROOT/ghostty/.config/ghostty/config" \
 "$HOME/.config/ghostty/config"
 
-install -m 0644 "$REPO_ROOT/vscodium/.config/VSCodium/User/settings.json" \
+install -m 0644 "$REPO_ROOT/vscodium/settings.json" \
 "$HOME/.config/VSCodium/User/settings.json"
 
 rm -rf ~/.config/nvim
