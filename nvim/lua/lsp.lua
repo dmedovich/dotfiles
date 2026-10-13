@@ -65,8 +65,8 @@ local servers = { "lua_ls", "gopls", "zls" }
 local ok_mason_lspconfig, mason_lspconfig = pcall(require, "mason-lspconfig")
 if ok_mason_lspconfig then
   mason_lspconfig.setup({
-    automatic_enable = servers,
-    ensure_installed = servers,
+    automatic_enable = not vim.g.dotfiles_bootstrap and servers or false,
+    ensure_installed = not vim.g.dotfiles_bootstrap and servers or {},
   })
 else
   vim.lsp.enable(servers)

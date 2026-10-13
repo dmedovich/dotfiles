@@ -1,0 +1,37 @@
+# Shared defaults. Identity and machine-specific preferences stay outside this repo.
+[user]
+    useConfigOnly = true
+
+[init]
+    defaultBranch = main
+
+[core]
+    editor = nvim
+    autocrlf = input
+
+[fetch]
+    prune = true
+
+[pull]
+    ff = only
+
+[push]
+    default = simple
+    autoSetupRemote = true
+
+[merge]
+    conflictStyle = zdiff3
+
+[diff]
+    algorithm = histogram
+    colorMoved = default
+
+[color]
+    ui = auto
+
+[alias]
+    st = status --short --branch
+    sw = switch
+    br = branch
+    ci = commit
+    lg = log --graph --oneline --decorate --all

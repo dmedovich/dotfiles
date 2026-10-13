@@ -256,16 +256,18 @@ setup("nvim-treesitter", function(treesitter)
     install_dir = vim.fn.stdpath("data") .. "/site",
   })
 
-  treesitter.install({
-    "go",
-    "gomod",
-    "gosum",
-    "gowork",
-    "lua",
-    "luadoc",
-    "query",
-    "vim",
-    "vimdoc",
-    "zig",
-  })
+  if not vim.g.dotfiles_bootstrap then
+    treesitter.install({
+      "go",
+      "gomod",
+      "gosum",
+      "gowork",
+      "lua",
+      "luadoc",
+      "query",
+      "vim",
+      "vimdoc",
+      "zig",
+    })
+  end
 end)

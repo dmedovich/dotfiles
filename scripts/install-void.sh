@@ -4,6 +4,8 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=lib/git.sh
+source "$SCRIPT_DIR/lib/git.sh"
 
 log()  { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
@@ -15,6 +17,7 @@ die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 [[ "${ID:-}" == "void" ]] || die "This installer is for Void Linux (detected: ${ID:-unknown})."
 command -v xbps-install >/dev/null 2>&1 || die "xbps-install is not available."
 command -v sudo >/dev/null 2>&1 || die "sudo is required."
+[[ -z "${GIT_CONFIG_GLOBAL:-}" || "$GIT_CONFIG_GLOBAL" == "$HOME/.gitconfig" ]] || die 'Unset custom GIT_CONFIG_GLOBAL before installation.'
 
 BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles-backups/$(date +%Y%m%d-%H%M%S)"
 backup_file() {
@@ -88,12 +91,16 @@ mkdir -p \
 
 log "Backing up existing configs"
 backup_file "$HOME/.zshrc"
+backup_file "$HOME/.p10k.zsh"
 backup_file "$HOME/.config/ghostty/config"
 backup_file "$HOME/.config/VSCodium/User/settings.json"
 backup_file "$HOME/.config/nvim"
 
 log "Installing configs"
+install_git_defaults "$REPO_ROOT/git/.gitconfig" "${XDG_CONFIG_HOME:-$HOME/.config}/git/dotfiles.gitconfig" \
+    "$HOME/.gitconfig" "$HOME/.gitconfig.local" backup_file
 install -m 0644 "$REPO_ROOT/zsh/.zshrc" "$HOME/.zshrc"
+install -m 0644 "$REPO_ROOT/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
 install -m 0644 "$REPO_ROOT/ghostty/.config/ghostty/config" \
     "$HOME/.config/ghostty/config"
 install -m 0644 "$REPO_ROOT/vscodium/settings.json" \
@@ -157,7 +164,9 @@ cat <<EOF
 Done.
 
 Configs installed:
+  ~/.gitconfig (shared defaults and existing preferences)
   ~/.zshrc
+  ~/.p10k.zsh
   ~/.config/ghostty/config
   ~/.config/VSCodium/User/settings.json
   ~/.config/nvim

@@ -1,0 +1,8 @@
+# Copy to ~/.gitconfig.local and replace these examples with your own identity.
+[user]
+    name = Your Name
+    email = you@example.com
+
+# Optional machine-specific preferences:
+# [core]
+#     editor = nvim
