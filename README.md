@@ -30,6 +30,8 @@ The script installs Fedora packages, Ghostty, Oh My Zsh, zsh plugins, powerlevel
 
 `--check` performs local checks without sudo or changes. Full installation also checks sudo, downloaded files, network access, shell/JSON/Lua syntax, available disk space (at least 2 GiB in HOME and 512 MiB at `/usr/local`, with additional room needed for builds), font detection, Ghostty configuration, and Neovim plugin/parser/language-server installation. Downloads and Neovim setup have timeouts; failures stop installation with a nonzero exit status.
 
+If installation failed during Neovim setup, run `bash scripts/install.sh --resume` to finish the remaining steps, including selecting zsh. This preserves backups and reuses installed packages and language servers. Resume is refused if cleanup has already started or installation stopped before Neovim setup.
+
 **Neovim 0.12+ with `vim.pack` is required.** After the package transaction, the script checks the actual `nvim` selected by PATH before replacing user configs. If Fedora provides an older version, install a compatible Neovim first. An older or broken `~/.local/bin/nvim` can shadow `/usr/bin/nvim`; the installer does not download nightly builds or replace that executable.
 
 Before replacing these paths, the script moves existing files/directories (including symlinks) into a private backup journal:
@@ -234,11 +236,11 @@ Install Mason tools:
 
 ```sh
 nvim --headless \
-  '+MasonInstall lua-language-server gopls zls' \
+  '+MasonInstall --quiet lua-language-server gopls zls' \
   +qa
 ```
 
-`MasonInstall` waits for completion in headless mode ([Mason documentation](https://github.com/mason-org/mason.nvim/blob/main/doc/mason.txt)). The full installer additionally checks installation receipts and executable availability.
+`MasonInstall` waits for completion in headless mode ([Mason documentation](https://github.com/mason-org/mason.nvim/blob/main/doc/mason.txt)). `--quiet` prevents normal Go download messages on stderr from becoming Vim errors. The full installer additionally checks installation receipts and executable availability, and skips servers already installed successfully.
 
 Mason uses the `mason.providers.client` provider to resolve metadata directly (GitHub API for GitHub releases), avoiding retries against `api.mason-registry.dev`. GitHub still needs to be reachable. Bootstrap output distinguishes plugin installation, Treesitter parsers and Mason language servers; Mason console logging is enabled and the Mason log path is printed before language-server installation.
 

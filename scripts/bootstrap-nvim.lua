@@ -23,17 +23,28 @@ for _, parser in ipairs(parsers) do
   assert(vim.treesitter.language.add(parser), "Parser could not be loaded: " .. parser)
 end
 
--- MasonInstall blocks in headless mode; verify every receipt afterwards.
+-- MasonInstall blocks in headless mode. Its default stderr handler treats normal
+-- Go download progress as a Vim error, so suppress command streams and verify
+-- receipts/binaries instead. Mason's own progress logging remains enabled.
 print("Neovim: Treesitter parsers verified; installing Mason language servers")
 print("Mason log: " .. vim.fn.stdpath("log") .. "/mason.log")
-vim.cmd("MasonInstall lua-language-server gopls zls")
 local registry = require("mason-registry")
-for _, name in ipairs({ "lua-language-server", "gopls", "zls" }) do
-  assert(registry.is_installed(name), "Mason installation failed: " .. name)
-  print("Mason: installed " .. name)
+local mason_root = require("mason.settings").current.install_root_dir
+local servers = { "lua-language-server", "gopls", "zls" }
+local function installed(name)
+  return registry.is_installed(name)
+    and vim.fn.filereadable(mason_root .. "/packages/" .. name .. "/mason-receipt.json") == 1
+    and vim.fn.executable(mason_root .. "/bin/" .. name) == 1
 end
-for _, name in ipairs({ "lua-language-server", "gopls", "zls" }) do
-  assert(vim.fn.executable(name) == 1, "Language server is not executable: " .. name)
+local missing = {}
+for _, name in ipairs(servers) do
+  if not installed(name) then missing[#missing + 1] = name end
 end
-assert(vim.v.errmsg == "", vim.v.errmsg)
+if #missing > 0 then
+  vim.cmd("MasonInstall --quiet " .. table.concat(missing, " "))
+end
+for _, name in ipairs(servers) do
+  assert(installed(name), "Mason installation is incomplete (receipt or executable missing): " .. name)
+  print("Mason: verified " .. name)
+end
 print("Neovim plugins, parsers and language servers verified")

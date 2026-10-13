@@ -8,12 +8,42 @@ source "$SCRIPT_DIR/lib/fedora.sh"
 # shellcheck source=lib/git.sh
 source "$SCRIPT_DIR/lib/git.sh"
 
+finish_installation() {
+    export PATH="/usr/local/go/bin:$HOME/.local/bin:$PATH"
+    export GOBIN="$HOME/.local/bin"
+    export GOPATH="$STATE/work/gopath"
+    export GOCACHE="$STATE/work/go-build"
+    export GOTOOLCHAIN=local
+    export NVIM_APPNAME=nvim
+    export DOTFILES_NVIM_INIT="$CONFIG_HOME/nvim/init.lua"
+    step 'Installing and checking Neovim plugins, parsers and language servers'
+    timeout --foreground 20m nvim --headless -u NONE -i NONE --cmd 'set loadplugins' -l "$SCRIPT_DIR/bootstrap-nvim.lua"
+    step 'Validating application configs'
+    command -v codium >/dev/null || warn 'VSCodium and its extensions are not installed; only its settings were copied. See README.'
+    zsh -n "$HOME/.zshrc"
+    zsh -n "$HOME/.p10k.zsh"
+    ghostty +validate-config
+
+    step 'Making zsh the login shell'
+    make_zsh_default
+
+    step 'Finishing installation'
+    if [[ -d "$STATE/work" ]]; then
+        chmod -R u+w "$STATE/work"
+        rm -rf -- "$STATE/work"
+    fi
+    printf 'complete\n' > "$STATE/status"
+    log "Done. Backups and installation journal: $STATE"
+    log 'Log out and log in again to start using zsh.'
+}
+
 if [[ "${1:-}" == --help ]]; then
-    echo 'Usage: bash scripts/install.sh [--check]'
+    echo 'Usage: bash scripts/install.sh [--check | --resume]'
     echo '  --check  Check prerequisites without installing or changing anything.'
+    echo '  --resume Finish an installation that reached the Neovim setup stage.'
     exit 0
 fi
-[[ $# == 0 || ( $# == 1 && $1 == --check ) ]] || die 'Unknown argument; use --help.'
+[[ $# == 0 || ( $# == 1 && ( $1 == --check || $1 == --resume ) ) ]] || die 'Unknown argument; use --help.'
 check_host
 check_layout
 [[ -z "${GIT_CONFIG_GLOBAL:-}" || "$GIT_CONFIG_GLOBAL" == "$HOME/.gitconfig" ]] || die 'Unset custom GIT_CONFIG_GLOBAL before installation; Git defaults are installed through ~/.gitconfig.'
@@ -37,6 +67,38 @@ for file in git/.gitconfig zsh/.zshrc zsh/.p10k.zsh ghostty/.config/ghostty/conf
     [[ -s "$REPO_ROOT/$file" ]] || die "Missing or empty repository file: $file"
 done
 [[ -d "$REPO_ROOT/nvim/lua" ]] || die 'Missing Neovim modules.'
+if [[ "${1:-}" == --resume ]]; then
+    [[ -d "$STATE" && ! -L "$STATE" ]] || die 'No recorded installation to resume.'
+    sudo -v
+    lock_state
+    [[ "$(cat "$STATE/format")" == 1 && "$(cat "$STATE/user")" == "$USER_NAME" && "$(cat "$STATE/home")" == "$HOME" ]] || die 'Installation journal belongs to another user or format.'
+    case "$(cat "$STATE/status")" in
+        failed|installing) ;;
+        *) die 'Only an unfinished installation can be resumed.' ;;
+    esac
+    [[ -f "$STATE/go-installing" && ! -f "$STATE/go-restored" ]] || die 'Installation has not reached Neovim setup, or cleanup has started.'
+    shopt -s nullglob
+    for entry in "$STATE"/paths/*; do
+        [[ -f "$entry/ready" && ! -f "$entry/restored" ]] || die 'Incomplete backup or cleanup detected; finish cleanup before reinstalling.'
+    done
+    if [[ -f "$STATE/checkpoint" ]]; then
+        [[ "$(cat "$STATE/checkpoint")" == neovim ]] || die 'Unsupported installation checkpoint.'
+    else
+        # Compatibility with installations recorded before --resume was added.
+        previous_log="$(cat "$STATE/log-file")"
+        validate_path "$previous_log"
+        [[ "$previous_log" == "$STATE_ROOT/logs/"* ]] || die 'Invalid previous installation log path.'
+        grep -Fq '==> Installing and checking Neovim plugins, parsers and language servers' "$previous_log" || die 'Previous installation did not reach Neovim setup.'
+    fi
+    [[ -s "$CONFIG_HOME/nvim/init.lua" ]] || die 'Installed Neovim config is missing.'
+    check_neovim
+    INSTALL_STATE_CREATED=true
+    printf '%s\n' "$INSTALL_LOG_FILE" > "$STATE/log-file"
+    printf 'neovim\n' > "$STATE/checkpoint"
+    printf 'installing\n' > "$STATE/status"
+    finish_installation
+    exit 0
+fi
 [[ ! -e "$STATE" ]] || die "An installation is already recorded in $STATE. Run scripts/uninstall.sh first (also after a failed install)."
 check_space "$HOME" 2097152
 check_space /usr/local 524288
@@ -198,22 +260,5 @@ for tool in "${GO_TOOLS[@]}"; do
     go version -m "$GOBIN/$binary" >/dev/null
 done
 
-step 'Installing and checking Neovim plugins, parsers and language servers'
-export NVIM_APPNAME=nvim
-export DOTFILES_NVIM_INIT="$CONFIG_HOME/nvim/init.lua"
-timeout --foreground 20m nvim --headless -u NONE -i NONE --cmd 'set loadplugins' -l "$SCRIPT_DIR/bootstrap-nvim.lua"
-step 'Validating application configs'
-command -v codium >/dev/null || warn 'VSCodium and its extensions are not installed; only its settings were copied. See README.'
-zsh -n "$HOME/.zshrc"
-zsh -n "$HOME/.p10k.zsh"
-ghostty +validate-config
-
-step 'Making zsh the login shell'
-make_zsh_default
-
-step 'Finishing installation'
-chmod -R u+w "$STATE/work"
-rm -rf -- "$STATE/work"
-printf 'complete\n' > "$STATE/status"
-log "Done. Backups and installation journal: $STATE"
-log 'Log out and log in again to start using zsh.'
+printf 'neovim\n' > "$STATE/checkpoint"
+finish_installation

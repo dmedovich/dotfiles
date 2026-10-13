@@ -55,6 +55,8 @@ elif name == "dnf":
         if os.environ.get("TEST_INSTALL_FAILURE"):
             sys.exit(1)
 elif name == "nvim":
+    if any(arg.endswith("bootstrap-nvim.lua") for arg in args) and os.environ.get("TEST_BOOTSTRAP_FAILURE"):
+        sys.exit(17)
     sys.exit(1 if os.environ.get("TEST_OLD_NVIM") else 0)
 elif name == "df":
     print("Filesystem 1024-blocks Used Available Capacity Mounted on\ntest 90000000 100 89999900 1% /")
@@ -136,6 +138,70 @@ exists() {
     def calls(self):
         path = self.root / "calls"
         return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+    def prepare_resume(self, legacy=False):
+        for directory in ("git", "zsh", "ghostty", "vscodium", "fonts", "nvim"):
+            (self.root / directory).symlink_to(REPO / directory, target_is_directory=True)
+        (self.state / "status").write_text("failed\n")
+        (self.state / "go-installing").touch()
+        (self.state / "work").mkdir()
+        (self.state / "work/cached-download").touch()
+        config = self.root / "config/nvim/init.lua"
+        config.parent.mkdir(parents=True)
+        config.write_text("-- installed config\n")
+        logs = self.state.parent / "logs"
+        logs.mkdir()
+        previous = logs / "previous.log"
+        previous.write_text("==> Installing and checking Neovim plugins, parsers and language servers\n")
+        (self.state / "log-file").write_text(str(previous) + "\n")
+        if not legacy:
+            (self.state / "checkpoint").write_text("neovim\n")
+        # Mock the final-stage endpoints, keeping journal validation, locking,
+        # cache cleanup and completion handling real. Never touch host configs.
+        with (self.scripts / "lib/fedora.sh").open("a") as helper:
+            helper.write('''
+nvim() { "$TEST_ROOT/bin/nvim" "$@"; }
+timeout() { "$TEST_ROOT/bin/nvim" "${@:4}"; }
+zsh() { return 0; }
+ghostty() { return 0; }
+make_zsh_default() { printf 'zsh selected\\n' > "$TEST_ROOT/shell-finished"; }
+''')
+
+    def test_legacy_neovim_failure_resumes_without_reinstalling_or_replacing_backups(self):
+        self.prepare_resume(legacy=True)
+        target = self.target("saved-config", "original")
+        entry = self.record(target, preserve=True)
+        target.write_text("installed")
+        result = self.run_script("install.sh", "--resume")
+        self.assertIn("Done.", result.stdout)
+        self.assertEqual((self.state / "status").read_text(), "complete\n")
+        self.assertEqual((entry / "backup").read_text(), "original")
+        self.assertEqual(target.read_text(), "installed")
+        self.assertFalse((self.state / "work").exists())
+        self.assertTrue((self.root / "shell-finished").exists())
+        self.assertFalse(any(call[0] in ("dnf", "rpm") for call in self.calls()))
+
+    def test_failed_resume_retains_cache_and_can_be_retried(self):
+        self.prepare_resume()
+        result = self.run_script("install.sh", "--resume", success=False, TEST_BOOTSTRAP_FAILURE="1")
+        self.assertEqual(result.returncode, 17)
+        self.assertEqual((self.state / "status").read_text(), "failed\n")
+        self.assertTrue((self.state / "work/cached-download").exists())
+        self.assertFalse((self.root / "shell-finished").exists())
+        self.run_script("install.sh", "--resume")
+        self.assertEqual((self.state / "status").read_text(), "complete\n")
+
+    def test_resume_rejects_installations_before_neovim_or_after_cleanup(self):
+        self.prepare_resume(legacy=True)
+        log = Path((self.state / "log-file").read_text().strip())
+        log.write_text("==> Installing Go tools\n")
+        result = self.run_script("install.sh", "--resume", success=False)
+        self.assertIn("did not reach Neovim", result.stdout)
+        (self.state / "go-restored").touch()
+        result = self.run_script("install.sh", "--resume", success=False)
+        self.assertIn("cleanup has started", result.stdout)
+        self.assertFalse((self.root / "shell-finished").exists())
+        self.assertTrue((self.state / "work/cached-download").exists())
 
     def install_git(self, target, defaults, personal, success=True):
         return self.shell(
