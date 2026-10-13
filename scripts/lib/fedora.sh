@@ -116,7 +116,10 @@ make_zsh_default() {
     fi
 }
 
-snapshot_packages() { rpm -qa --qf '%{NAME}.%{ARCH}\n' | LC_ALL=C sort -u; }
+snapshot_packages() {
+    # RPM signing keys can have architecture "(none)"; they are not managed packages.
+    rpm -qa --qf '%{NAME}.%{ARCH}\n' | awk '!/^gpg-pubkey\./' | LC_ALL=C sort -u
+}
 
 install_packages() {
     local result=0

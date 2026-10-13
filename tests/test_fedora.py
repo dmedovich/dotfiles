@@ -49,6 +49,8 @@ elif name == "dnf":
         (root / "rpm").write_text("\n".join(p for p in packages if p not in args[2:]) + "\n")
     elif args[0] == "install":
         packages = (root / "rpm").read_text().splitlines()
+        if os.environ.get("TEST_IMPORT_KEY"):
+            packages.append("gpg-pubkey.(none)")
         (root / "rpm").write_text("\n".join(sorted(set(packages + [p + ".x86_64" for p in args[2:]]))) + "\n")
         if os.environ.get("TEST_INSTALL_FAILURE"):
             sys.exit(1)
@@ -261,6 +263,35 @@ exists() {
         self.run_script()
         self.assertEqual(path.read_text(), "before")
 
+    def test_legacy_signing_key_records_are_not_removed_or_queried_as_packages(self):
+        with (self.root / "rpm").open("a") as rpm:
+            rpm.write("gpg-pubkey.(none)\n")
+        (self.state / "packages.new").write_text("gpg-pubkey.(none)\nnew-tool.x86_64\n")
+        self.run_script()
+        self.assertIn("gpg-pubkey.(none)", (self.root / "rpm").read_text())
+        self.assertFalse(any("gpg-pubkey" in " ".join(call) for call in self.calls()))
+        self.assertIn(["dnf", "remove", "--no-autoremove", "new-tool.x86_64"], self.calls())
+
+    def test_keep_packages_can_finish_after_legacy_cleanup_already_restored_files(self):
+        path = self.target("restored-config", "original")
+        entry = self.record(path, preserve=True)
+        (entry / "removed").write_text("installed config")
+        shutil.move(entry / "backup", path)
+        (entry / "restored").touch()
+        (self.state / "packages.new").write_text("gpg-pubkey.(none)\ninvalid/package\n")
+        self.run_script("uninstall.sh", "--keep-packages")
+        self.assertEqual(path.read_text(), "original")
+        self.assertFalse(self.state.exists())
+        self.assertFalse(any(call[0] in ("rpm", "dnf") for call in self.calls()))
+
+    def test_invalid_package_record_is_rejected_before_restoring_user_files(self):
+        path = self.target("config", "before")
+        self.record(path, preserve=True)
+        path.write_text("installed")
+        (self.state / "packages.new").write_text("invalid/package\n")
+        self.run_script(success=False)
+        self.assertEqual(path.read_text(), "installed")
+
     def test_shell_is_restored_before_package_removal(self):
         (self.state / "shell.before").write_text("/bin/sh\n")
         (self.state / "shell.after").write_text("/bin/bash\n")
@@ -347,6 +378,11 @@ exists() {
     def test_transaction_failure_still_records_new_packages(self):
         self.shell('snapshot_packages > "$STATE/packages.before"; if install_packages extra; then exit 99; fi', TEST_INSTALL_FAILURE="1")
         self.assertEqual((self.state / "packages.new").read_text(), "extra.x86_64\n")
+
+    def test_imported_rpm_signing_keys_are_excluded_from_installation_journal(self):
+        self.shell('snapshot_packages > "$STATE/packages.before"; install_packages extra', TEST_IMPORT_KEY="1")
+        self.assertEqual((self.state / "packages.new").read_text(), "extra.x86_64\n")
+        self.assertIn("gpg-pubkey.(none)", (self.root / "rpm").read_text())
 
     def test_preflight_rejects_old_neovim_without_changes(self):
         shutil.rmtree(self.state)

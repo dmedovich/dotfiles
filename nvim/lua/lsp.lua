@@ -54,6 +54,8 @@ vim.lsp.config("zls", {
 local ok_mason, mason = pcall(require, "mason")
 if ok_mason then
   mason.setup({
+    -- Resolve metadata with client tooling, avoiding api.mason-registry.dev retries.
+    providers = { "mason.providers.client" },
     ui = {
       border = "rounded",
     },

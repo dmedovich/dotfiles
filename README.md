@@ -93,6 +93,8 @@ Cleanup restores the old shell before package removal. If you changed your shell
 
 Only RPM packages newly introduced by the installer's DNF transactions are requested for removal, including their new dependencies. DNF shows the proposed transaction and asks for confirmation; review it if other programs were installed afterwards. Automatic dependency cleanup is disabled ([DNF documentation](https://dnf5.readthedocs.io/en/latest/commands/remove.8.html)). Package upgrades, shared system caches and previous/manual installations without a journal cannot be rolled back automatically. If cleanup fails or DNF removal is declined, the journal remains and cleanup can be retried. This lifecycle applies to the Fedora scripts; `install-void.sh` remains separate.
 
+RPM signing-key records (`gpg-pubkey.*`, including `gpg-pubkey.(none)`) are excluded from installation snapshots and skipped in older journals. They are never requested for removal. `--keep-packages` skips the package journal entirely, so it can finish cleanup after an older version stopped on a signing-key record. Update the checkout and rerun cleanup; already restored files are kept in place.
+
 ## Base packages
 
 Fedora:
@@ -237,6 +239,8 @@ nvim --headless \
 ```
 
 `MasonInstall` waits for completion in headless mode ([Mason documentation](https://github.com/mason-org/mason.nvim/blob/main/doc/mason.txt)). The full installer additionally checks installation receipts and executable availability.
+
+Mason uses the `mason.providers.client` provider to resolve metadata directly (GitHub API for GitHub releases), avoiding retries against `api.mason-registry.dev`. GitHub still needs to be reachable. Bootstrap output distinguishes plugin installation, Treesitter parsers and Mason language servers; Mason console logging is enabled and the Mason log path is printed before language-server installation.
 
 ## VSCodium
 

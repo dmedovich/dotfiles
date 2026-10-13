@@ -36,6 +36,17 @@ for entry in "${entries[@]}"; do
     [[ "$(cat "$entry/kind")" == existing || "$(cat "$entry/kind")" == absent ]] || die "Invalid path record: $entry"
 done
 
+# Validate package records before restoring anything. --keep-packages does not
+# need the RPM journal; older journals may contain imported signing keys.
+packages=()
+if ! $KEEP_PACKAGES && [[ -f "$STATE/packages.new" ]]; then
+    while IFS= read -r package; do
+        [[ "$package" != gpg-pubkey.* ]] || continue
+        [[ "$package" =~ ^[a-zA-Z0-9][a-zA-Z0-9_+.-]*$ ]] || die "Invalid package name: $package"
+        if rpm -q "$package" >/dev/null 2>&1; then packages+=("$package"); fi
+    done < "$STATE/packages.new"
+fi
+
 if [[ -f "$STATE/shell.before" && ! -f "$STATE/shell-restored" ]]; then
     previous="$(cat "$STATE/shell.before")"
     installed="$(cat "$STATE/shell.after")"
@@ -108,13 +119,6 @@ if [[ -f "$STATE/ghostty-copr" && ! -f "$STATE/copr-restored" ]]; then
     fi
 fi
 
-packages=()
-if [[ -f "$STATE/packages.new" ]]; then
-    while IFS= read -r package; do
-        [[ "$package" =~ ^[a-zA-Z0-9][a-zA-Z0-9_+.-]*$ ]] || die "Invalid package name: $package"
-        if rpm -q "$package" >/dev/null 2>&1; then packages+=("$package"); fi
-    done < "$STATE/packages.new"
-fi
 if ! $KEEP_PACKAGES && (( ${#packages[@]} )); then
     log "Remove packages introduced by the installer: ${packages[*]}"
     if ! $DRY_RUN; then
