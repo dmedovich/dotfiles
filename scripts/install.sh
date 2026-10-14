@@ -248,7 +248,7 @@ GO_TOOLS=(
     mvdan.cc/gofumpt@latest
     github.com/go-delve/delve/cmd/dlv@latest
     github.com/air-verse/air@latest
-    github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+    github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 )
 for tool in "${GO_TOOLS[@]}"; do
     step "Installing Go tool: $tool"

@@ -244,6 +244,12 @@ nvim --headless \
 
 Mason uses the `mason.providers.client` provider to resolve metadata directly (GitHub API for GitHub releases), avoiding retries against `api.mason-registry.dev`. GitHub still needs to be reachable. Bootstrap output distinguishes plugin installation, Treesitter parsers and Mason language servers; Mason console logging is enabled and the Mason log path is printed before language-server installation.
 
+For Go, `gopls` provides completion, diagnostics, code actions, import organization and gofumpt formatting. Saving a Go file adds missing imports, removes unused imports and formats the buffer. Servers installed through the system PATH are enabled too; `gopls` from PATH takes priority over Mason's copy. Standalone Go files are supported.
+
+Completion opens while typing; use `Ctrl-Space` to open it manually, `Ctrl-N`/`Ctrl-P` to select and `Enter` to accept. Use `<Space>ca` for available fixes, `<Space>rn` to rename, `<Space>lf` to format and organize imports, and `<Space>ll` to run lint. Automatic golangci-lint checks run on opening and saving files, from the file's package directory. Unsaved edits use gopls diagnostics.
+
+After upgrading Go, rebuild `gopls` and golangci-lint with the commands in the Go section. golangci-lint must be built with a Go version at least as new as the project's version; an older build can fail with exit code 3.
+
 ## VSCodium
 
 Install settings:
@@ -296,7 +302,7 @@ go install golang.org/x/tools/gopls@latest
 go install mvdan.cc/gofumpt@latest
 go install github.com/go-delve/delve/cmd/dlv@latest
 go install github.com/air-verse/air@latest
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 ```
 
 ## Sync checks

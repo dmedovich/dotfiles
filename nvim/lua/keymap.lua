@@ -4,11 +4,14 @@ map("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlight" })
 map("n", "<leader>w", "<cmd>write<CR>", { desc = "Write file" })
 map("n", "<leader>q", "<cmd>quit<CR>", { desc = "Quit window" })
 map("n", "<leader>lf", function()
+  if vim.bo.filetype == "go" then
+    require("go_tools").organize_imports(0)
+  end
   local ok, conform = pcall(require, "conform")
   if ok then
     conform.format({
       async = true,
-      lsp_format = "fallback",
+      lsp_format = vim.bo.filetype == "go" and "prefer" or "fallback",
     })
     return
   end
@@ -16,10 +19,7 @@ map("n", "<leader>lf", function()
   vim.lsp.buf.format({ async = true })
 end, { desc = "Format buffer" })
 map("n", "<leader>ll", function()
-  local ok, lint = pcall(require, "lint")
-  if ok then
-    lint.try_lint()
-  end
+  require("go_tools").lint()
 end, { desc = "Run lint" })
 map("n", "<leader>t", function()
   vim.cmd("botright 12split")

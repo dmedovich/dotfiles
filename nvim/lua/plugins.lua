@@ -111,12 +111,13 @@ end)
 setup("conform", function(conform)
   conform.setup({
     formatters_by_ft = {
-      go = { "gofumpt", "gofmt" },
+      go = {}, -- gopls formats with gofumpt and shares the project's Go settings.
     },
     format_on_save = function(bufnr)
       if vim.bo[bufnr].filetype == "go" then
+        require("go_tools").organize_imports(bufnr)
         return {
-          lsp_format = "fallback",
+          lsp_format = "prefer",
           timeout_ms = 3000,
         }
       end
@@ -140,11 +141,22 @@ setup("lint", function(lint)
     go = { "golangcilint" },
   }
 
+  -- Resolve arguments per buffer; the upstream definition checks GOMOD once
+  -- when loaded, which can use an unrelated editor working directory.
+  lint.linters.golangcilint = function()
+    local linter = require("lint.linters.golangcilint")
+    linter.args[#linter.args] = function()
+      local filename = vim.api.nvim_buf_get_name(0)
+      return vim.fs.root(filename, "go.mod") and "." or filename
+    end
+    return linter
+  end
+
   local group = vim.api.nvim_create_augroup("user_lint", { clear = true })
-  vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost", "InsertLeave" }, {
+  vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost" }, {
     group = group,
     callback = function()
-      lint.try_lint()
+      require("go_tools").lint()
     end,
   })
 end)
@@ -236,11 +248,11 @@ setup("blink.cmp", function(blink)
     },
     completion = {
       documentation = {
-        auto_show = false,
+        auto_show = true,
       },
     },
     fuzzy = {
-      implementation = "prefer_rust_with_warning",
+      implementation = "lua",
     },
     keymap = {
       preset = "enter",

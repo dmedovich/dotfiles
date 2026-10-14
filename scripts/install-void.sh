@@ -123,7 +123,7 @@ go install golang.org/x/tools/gopls@latest
 go install mvdan.cc/gofumpt@latest
 go install github.com/go-delve/delve/cmd/dlv@latest
 go install github.com/air-verse/air@latest
-go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 
 log "Checking Neovim"
 NVIM_VERSION="$(nvim --clean --headless '+lua print(vim.version().major .. "." .. vim.version().minor .. "." .. vim.version().patch)' +qa 2>/dev/null | tail -n1 || true)"

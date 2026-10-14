@@ -28,6 +28,12 @@ vim.lsp.config("lua_ls", {
 
 vim.lsp.config("gopls", {
   capabilities = capabilities,
+  -- Prefer the Go toolchain's gopls before Mason prepends its own bin directory.
+  cmd = { vim.fn.exepath("gopls") ~= "" and vim.fn.exepath("gopls") or "gopls" },
+  root_dir = function(bufnr, on_dir)
+    local filename = vim.api.nvim_buf_get_name(bufnr)
+    on_dir(vim.fs.root(filename, "go.work") or vim.fs.root(filename, "go.mod") or vim.fs.dirname(filename))
+  end,
   settings = {
     gopls = {
       analyses = {
@@ -37,6 +43,8 @@ vim.lsp.config("gopls", {
         unusedwrite = true,
       },
       gofumpt = true,
+      completeUnimported = true,
+      usePlaceholders = true,
       staticcheck = true,
     },
   },
@@ -67,9 +75,12 @@ local servers = { "lua_ls", "gopls", "zls" }
 local ok_mason_lspconfig, mason_lspconfig = pcall(require, "mason-lspconfig")
 if ok_mason_lspconfig then
   mason_lspconfig.setup({
-    automatic_enable = not vim.g.dotfiles_bootstrap and servers or false,
+    automatic_enable = false,
     ensure_installed = not vim.g.dotfiles_bootstrap and servers or {},
   })
-else
+end
+
+-- Also enable servers installed outside Mason (for example by the installer).
+if not vim.g.dotfiles_bootstrap then
   vim.lsp.enable(servers)
 end
