@@ -12,7 +12,8 @@ INIT = r'''
 local root = vim.env.TEST_MASON_ROOT
 for _, name in ipairs({ "lualine", "mason", "mason-lspconfig", "neo-tree", "plenary",
   "nui.popup", "nvim-web-devicons", "blink.cmp", "fzf-lua", "which-key", "gitsigns",
-  "conform", "Comment", "nvim-autopairs", "lint", "ibl", "todo-comments", "diffview", "neogit" }) do
+  "conform", "Comment", "nvim-autopairs", "lint", "ibl", "todo-comments", "diffview", "neogit",
+  "dap", "nio", "dapui", "dap-go", "neotest", "neotest-go", "persistence" }) do
   package.preload[name] = function() return {} end
 end
 package.preload["nvim-treesitter"] = function()
@@ -84,6 +85,21 @@ class Bootstrap(unittest.TestCase):
         self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
         second = self.run_bootstrap(TEST_FORBID_INSTALL="1")
         self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+
+    def test_development_plugins_are_verified_for_the_new_config(self):
+        (self.root / "lua").mkdir()
+        (self.root / "lua/development.lua").write_text("return {}\n")
+        result = self.run_bootstrap()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_missing_development_plugin_fails_for_the_new_config(self):
+        (self.root / "lua").mkdir()
+        (self.root / "lua/development.lua").write_text("return {}\n")
+        with self.init.open("a") as init:
+            init.write('package.preload["dapui"] = nil\n')
+        result = self.run_bootstrap()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("dapui", result.stdout + result.stderr)
 
     def test_partial_installation_without_receipt_still_fails(self):
         result = self.run_bootstrap(TEST_MISSING_RECEIPT="gopls")

@@ -131,7 +131,7 @@ snapshot_packages > "$STATE/packages.before"
 
 step 'Installing Fedora packages'
 install_packages zsh neovim dnf-plugins-core git curl jq ca-certificates fontconfig \
-    tar unzip fzf fd-find ripgrep tree-sitter-cli make gcc gcc-c++ util-linux-user
+    tar unzip fzf fd-find zoxide python3 ripgrep tree-sitter-cli make gcc gcc-c++ util-linux-user
 step 'Checking installed commands and repository configs'
 for cmd in zsh nvim git curl jq fc-cache fc-match tar unzip fzf fd rg tree-sitter make gcc g++ chsh sha256sum timeout; do
     command -v "$cmd" >/dev/null || die "Required command is missing after installation: $cmd"
@@ -204,6 +204,9 @@ install_git_defaults "$REPO_ROOT/git/.gitconfig" "$CONFIG_HOME/git/dotfiles.gitc
     "$HOME/.gitconfig" "$HOME/.gitconfig.local" backup_path
 replace_file "$REPO_ROOT/zsh/.zshrc" "$HOME/.zshrc"
 replace_file "$REPO_ROOT/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
+backup_path "$HOME/.local/bin/dotfiles-check" preserve
+mkdir -p "$HOME/.local/bin"
+install -m 0755 "$REPO_ROOT/scripts/dotfiles-check" "$HOME/.local/bin/dotfiles-check"
 if [[ "$ZSH_CUSTOM" != "$HOME/.oh-my-zsh/custom" ]]; then
     printf 'export ZSH_CUSTOM=%q\n' "$ZSH_CUSTOM" > "$STATE/work/zsh-custom"
     cat "$STATE/work/zsh-custom" "$HOME/.zshrc" > "$STATE/work/zshrc"
@@ -249,10 +252,13 @@ GO_TOOLS=(
     github.com/go-delve/delve/cmd/dlv@latest
     github.com/air-verse/air@latest
     github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+    github.com/zricethezav/gitleaks/v8@latest
 )
 for tool in "${GO_TOOLS[@]}"; do
     step "Installing Go tool: $tool"
     binary="${tool%@*}"
+    # Module paths may end in a major version (gitleaks/v8), not a binary name.
+    if [[ "${binary##*/}" =~ ^v[0-9]+$ ]]; then binary="${binary%/*}"; fi
     binary="${binary##*/}"
     backup_path "$GOBIN/$binary"
     go install "$tool"

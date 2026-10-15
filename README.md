@@ -14,6 +14,8 @@ Personal Linux dotfiles.
 - `fonts/Mononoki.zip` - Mononoki Nerd Font archive.
 - `scripts/install.sh` - full Fedora-oriented installer.
 - `scripts/uninstall.sh` - restore previous settings and remove the recorded Fedora installation.
+- `scripts/update-dev.sh` - update the developer workflow on an existing installation, with backups.
+- `scripts/dotfiles-check` - per-repository checks for staged secrets, Go formatting and Go tests.
 
 ## Full install
 
@@ -115,6 +117,8 @@ sudo dnf install -y \
   unzip \
   fzf \
   fd-find \
+  zoxide \
+  python3 \
   ripgrep \
   tree-sitter-cli \
   make \
@@ -250,6 +254,59 @@ Completion opens while typing; use `Ctrl-Space` to open it manually, `Ctrl-N`/`C
 
 After upgrading Go, rebuild `gopls` and golangci-lint with the commands in the Go section. golangci-lint must be built with a Go version at least as new as the project's version; an older build can fail with exit code 3.
 
+## Developer workflow
+
+For an existing Fedora setup, close Neovim and run from this checkout:
+
+```sh
+sudo dnf install zoxide fzf fd-find python3
+bash scripts/update-dev.sh
+```
+
+The updater requires an existing Go installation, Ghostty and Neovim 0.12+. It backs up the affected configs and binaries under `~/.local/state/dotfiles-dev-backups/` (or `XDG_STATE_HOME`), rebuilds Delve and Gitleaks with the current Go, copies the shell/Ghostty/Neovim configs and installs/verifies Neovim plugins. It preserves Neovim's existing plugin lockfile. It does not run the full Fedora installation again. An existing `~/.zshrc.local` is retained for personal overrides; changes made directly to `.zshrc` are kept in the backup. Restart the shell, Neovim and Ghostty afterwards.
+
+In the shell:
+
+| Command / key | Action |
+| --- | --- |
+| `p` / `p search` | Choose a Git repository with fzf and change to it |
+| `croot` | Return to the current repository root |
+| `z name` / `zi` | Jump to a visited directory / select one interactively |
+| `Ctrl-R` | Search shared shell history without executing the selected command |
+| `Ctrl-T` / `Alt-C` | Select a file / change directory with fzf |
+
+`p` scans up to six levels under existing `~/Work`, `~/Projects`, `~/projects`, `~/src` and `~/dotfiles`, including Git worktrees. Customize the roots in `~/.zshrc.local`, for example `PROJECT_DIRS=("$HOME/code" "$HOME/Work")`. Commands beginning with a space are omitted from zsh history. [fzf shell integration](https://github.com/junegunn/fzf#setting-up-shell-integration), [zoxide](https://github.com/ajeetdsouza/zoxide).
+
+Ghostty keeps ordinary tabs: `Ctrl-Shift-T` opens a tab in the current directory; `Ctrl-Shift-PageUp/PageDown` switches tabs. `Ctrl-Shift-E/O` splits right/down; `Ctrl-Shift-Enter` zooms a split. Closing a surface with a running foreground process asks for confirmation. Ghostty on Linux currently cannot restore tabs/splits after restart ([Ghostty documentation](https://ghostty.org/docs/config/reference#window-save-state)). Neovim saves project sessions with files, tabs and splits; run `p`, start `nvim` from the project root, then press `<Space>sr` to restore that project's layout. `<Space>sl` restores the last session, `<Space>ss` selects a session and `<Space>sd` stops saving it. Terminal processes are not restarted by session restoration.
+
+Go debugging uses [nvim-dap-go](https://github.com/leoluz/nvim-dap-go), Delve and [nvim-dap-ui](https://github.com/rcarriga/nvim-dap-ui). Test execution uses [Neotest's Go adapter](https://github.com/nvim-neotest/neotest-go). Open a Go module before running tests/debugging; Delve's `dlv` executable must be on PATH.
+
+| Neovim key | Action |
+| --- | --- |
+| `<Space>db` / `<Space>dB` | Toggle breakpoint / set conditional breakpoint |
+| `<Space>dc` | Start or continue debugging; choose “Debug current package” for a main package |
+| `<Space>dn` / `<Space>di` / `<Space>do` | Step over / into / out |
+| `<Space>de` / `<Space>du` / `<Space>dq` | Evaluate expression / toggle panels / stop debugger |
+| `<Space>dt` | Debug the Go test under the cursor |
+| `<Space>Tn` / `<Space>Tf` | Run nearest test / current test file |
+| `<Space>Tp` / `<Space>Ta` | Run package (including subpackages) / module tests |
+| `<Space>Tl` / `<Space>Tx` | Repeat last run / stop tests |
+| `<Space>Ts` / `<Space>To` | Test summary / test output |
+| `<Space>Tj` / `<Space>Tk` | Jump to next / previous failed test |
+
+Test runs use `-count=1 -timeout=60s`. Commands starting a new run save the current buffer first. The test summary and diagnostics show failures; the output panel contains detailed compiler/test output. Session/debug/test commands are also listed by which-key after pressing the corresponding prefix.
+
+Enable commit checks once **inside each repository**:
+
+```sh
+cd /path/to/project
+dotfiles-check install
+```
+
+This installs a self-contained `.git/hooks/pre-commit`. Existing hooks and `core.hooksPath` are respected; with another hook manager, call `dotfiles-check` from that manager instead. Run `dotfiles-check` manually to check the current index. Remove the installed hook to disable it; rerun `dotfiles-check install` after updating the checker to refresh its installed copy.
+
+Checks reject staged whitespace errors, scan staged additions using [Gitleaks](https://github.com/gitleaks/gitleaks) with secrets redacted, verify Go files with `gofmt` and run affected package tests with `-count=1 -timeout=30s` (120 seconds per invocation including builds). Format and stage files again when formatting fails; the hook never rewrites files or stages changes. Go module changes test the whole changed module; workspace changes test every checked-in module. Tests run from a temporary export of the **index**, so unstaged edits and untracked files cannot hide a failure. Deleted files and nested modules are handled. Standalone Go files receive formatting checks only. Dependencies must be available; local `replace` targets outside the repository and uncommitted sibling modules are not included. Go checks discover the staged workspace using `GOWORK=auto`, independently of any absolute workspace override in the current shell. These are quick checks of touched packages; run your full suite/CI separately for changes affecting their dependents.
+
 ## VSCodium
 
 Install settings:
@@ -303,6 +360,7 @@ go install mvdan.cc/gofumpt@latest
 go install github.com/go-delve/delve/cmd/dlv@latest
 go install github.com/air-verse/air@latest
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+go install github.com/zricethezav/gitleaks/v8@latest
 ```
 
 ## Sync checks

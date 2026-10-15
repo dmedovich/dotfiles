@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Check the staged commit; install this hook separately in each repository."""
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+
+MARKER = "dotfiles staged checks v1"
+
+
+def run(args, **kwargs):
+    return subprocess.run(args, check=True, **kwargs)
+
+
+def git(*args):
+    return subprocess.check_output(["git", *args])
+
+
+def install():
+    if subprocess.run(["git", "config", "--get", "core.hooksPath"], capture_output=True).returncode == 0:
+        raise RuntimeError("core.hooksPath is already configured; add dotfiles-check to your existing hook manager.")
+    hook = Path(os.fsdecode(git("rev-parse", "--git-path", "hooks/pre-commit")).strip())
+    if hook.is_symlink() or (hook.exists() and MARKER not in hook.read_text(errors="replace")):
+        raise RuntimeError(f"Keeping existing hook: {hook}. Add dotfiles-check to it manually.")
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    # Self-contained copy keeps working when the dotfiles checkout moves.
+    hook.write_bytes(Path(__file__).read_bytes())
+    hook.chmod(0o755)
+    print(f"Installed {hook}. Remove this file to disable these checks.")
+
+
+def check():
+    names = [os.fsdecode(name) for name in git("diff", "--cached", "--name-only", "-z").split(b"\0") if name]
+    if not names:
+        return
+    if not shutil.which("gitleaks"):
+        raise RuntimeError("gitleaks is missing; install it before committing (see dotfiles README).")
+    run(["git", "diff", "--cached", "--check"])
+    print("Checking staged changes for secrets...", flush=True)
+    run(["gitleaks", "git", "--pre-commit", "--staged", "--redact", "--no-banner", "."])
+
+    changed = [Path(name) for name in names if name.endswith(".go") or Path(name).name in {"go.mod", "go.sum", "go.work", "go.work.sum"}]
+    if not changed:
+        return
+    if not shutil.which("go") or not shutil.which("gofmt"):
+        raise RuntimeError("Go and gofmt are required for staged Go changes.")
+    with tempfile.TemporaryDirectory(prefix="dotfiles-check-") as directory:
+        snapshot = Path(directory)
+        run(["git", "checkout-index", "--all", "--prefix=" + directory + "/"])
+        bad = []
+        for relative in changed:
+            file = snapshot / relative
+            if relative.suffix != ".go" or not file.exists():
+                continue
+            if file.is_symlink():
+                raise RuntimeError(f"Cannot check a symlinked Go source: {relative}")
+            source = file.read_bytes()
+            formatted = subprocess.check_output(["gofmt"], input=source)
+            if formatted != source:
+                bad.append(str(relative))
+        if bad:
+            raise RuntimeError("Format these files and stage them again:\n" + "\n".join(bad))
+
+        # Test the staged snapshot, including when a file is only partly staged.
+        # Module/workspace changes check every module; source changes check packages.
+        all_modules = any(path.name in {"go.work", "go.work.sum"} for path in changed)
+        targets = {}
+        if all_modules:
+            for module in snapshot.rglob("go.mod"):
+                if "vendor" not in module.relative_to(snapshot).parts and not module.is_symlink():
+                    targets[module.parent] = {"./..."}
+        for relative in changed:
+            parent = (snapshot / relative).parent
+            module = parent
+            while module != snapshot and not (module / "go.mod").is_file():
+                module = module.parent
+            if not (module / "go.mod").is_file():
+                continue  # Standalone files have no package dependency graph.
+            packages = targets.setdefault(module, set())
+            if relative.name in {"go.mod", "go.sum"}:
+                packages.add("./...")
+            elif parent.is_dir() and any(parent.glob("*.go")) and "vendor" not in relative.parts:
+                packages.add("./" + parent.relative_to(module).as_posix())
+        # Git exports repository variables when invoking hooks; do not let child
+        # builds discover the original index/worktree instead of this snapshot.
+        local_git_env = set(git("rev-parse", "--local-env-vars").decode().splitlines())
+        env = {key: value for key, value in os.environ.items() if key not in local_git_env}
+        env["GOWORK"] = "auto"
+        for module, packages in sorted(targets.items()):
+            if not packages:
+                continue
+            args = ["./..."] if "./..." in packages else sorted(packages)
+            print(f"Testing staged {module.relative_to(snapshot)}: {' '.join(args)}", flush=True)
+            run(["go", "test", "-count=1", "-timeout=30s", *args], cwd=module, env=env, timeout=120)
+    print("Staged checks passed.")
+
+
+def main():
+    if sys.argv[1:] not in ([], ["check"], ["install"]):
+        raise RuntimeError("Usage: dotfiles-check [check | install]")
+    os.chdir(os.fsdecode(git("rev-parse", "--show-toplevel")).strip())
+    if sys.argv[1:] == ["install"]:
+        install()
+    else:
+        check()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (RuntimeError, OSError, subprocess.SubprocessError) as error:
+        print(f"Commit check failed: {error}", file=sys.stderr)
+        sys.exit(1)

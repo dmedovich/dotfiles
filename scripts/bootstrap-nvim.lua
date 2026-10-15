@@ -15,6 +15,13 @@ for _, module in ipairs({
   assert(require(module), "Plugin could not be loaded: " .. module)
 end
 
+-- A resumed installation may still have the previous config without these plugins.
+if vim.fn.filereadable(vim.fn.fnamemodify(init, ":h") .. "/lua/development.lua") == 1 then
+  for _, module in ipairs({ "dap", "nio", "dapui", "dap-go", "neotest", "neotest-go", "persistence" }) do
+    assert(require(module), "Plugin could not be loaded: " .. module)
+  end
+end
+
 assert(#vim.api.nvim_get_runtime_file("lsp/gopls.lua", false) > 0, "nvim-lspconfig server definitions are missing")
 print("Neovim: plugins loaded; installing Treesitter parsers")
 local parsers = { "go", "gomod", "gosum", "gowork", "lua", "luadoc", "query", "vim", "vimdoc", "zig" }

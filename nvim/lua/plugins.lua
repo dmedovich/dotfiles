@@ -25,6 +25,13 @@ vim.pack.add({
   { src = "https://github.com/folke/todo-comments.nvim" },
   { src = "https://github.com/sindrets/diffview.nvim" },
   { src = "https://github.com/NeogitOrg/neogit" },
+  { src = "https://github.com/mfussenegger/nvim-dap" },
+  { src = "https://github.com/nvim-neotest/nvim-nio" },
+  { src = "https://github.com/rcarriga/nvim-dap-ui" },
+  { src = "https://github.com/leoluz/nvim-dap-go" },
+  { src = "https://github.com/nvim-neotest/neotest" },
+  { src = "https://github.com/nvim-neotest/neotest-go" },
+  { src = "https://github.com/folke/persistence.nvim" },
 }, {
   confirm = false,
   load = true,
@@ -55,8 +62,13 @@ setup("which-key", function(which_key)
     { "<leader>g", group = "git" },
     { "<leader>h", group = "git hunks" },
     { "<leader>l", group = "lsp" },
+    { "<leader>d", group = "debug" },
+    { "<leader>T", group = "tests" },
+    { "<leader>s", group = "sessions" },
   })
 end)
+
+require("development").setup()
 
 setup("gitsigns", function(gitsigns)
   gitsigns.setup({
